@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SuratBase — Document to Database AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy:   { DEFAULT: '#1e3a5f', light: '#254d7f', dark: '#152c47' },
+            accent: { DEFAULT: '#f97316', light: '#fb923c', dark: '#ea6c0a' },
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+  <!-- ══════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════ -->
+  <header class="bg-navy text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-screen-xl mx-auto px-4 py-3 flex items-center gap-3">
+      <div class="flex items-center justify-center w-9 h-9 rounded-lg bg-accent font-bold text-white text-lg select-none">S</div>
+      <div>
+        <h1 class="text-lg font-bold leading-tight tracking-wide">SuratBase</h1>
+        <p class="text-xs text-slate-300 leading-none">Document to Database AI</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-screen-xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- ══════════════════════════════════════════
+         TOP ROW: RINGKASAN STATISTIK
+    ══════════════════════════════════════════ -->
+    <section aria-label="Ringkasan statistik surat" id="stats-section"
+             class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <!-- Cards are injected by JS -->
+    </section>
+
+    <!-- ══════════════════════════════════════════
+         MAIN CONTENT: TWO-COLUMN LAYOUT
+    ══════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+      <!-- ────────────────────────────────────────
+           LEFT COLUMN: INPUT + PREVIEW
+      ──────────────────────────────────────── -->
+      <div class="space-y-5">
+
+        <!-- CARD: INPUT TEKS SURAT -->
+        <section aria-labelledby="input-heading" class="card">
+          <div class="card-header">
+            <h2 id="input-heading" class="card-title">
+              <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Input Teks Surat
+            </h2>
+            <button id="btn-load-sample" type="button"
+                    class="btn-secondary text-xs px-3 py-1.5">
+              Muat Contoh
+            </button>
+          </div>
+          <div class="card-body">
+            <label for="surat-input" class="sr-only">Tempel teks surat dinas di sini</label>
+            <textarea id="surat-input" rows="14"
+                      placeholder="Tempel teks surat dinas di sini…"
+                      class="textarea-field"></textarea>
+            <div class="flex gap-3 mt-3">
+              <button id="btn-extract" type="button" class="btn-primary flex-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Ekstrak Data
+              </button>
+              <button id="btn-clear-input" type="button" class="btn-ghost">
+                Bersihkan
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD: PRATINJAU HASIL EKSTRAKSI -->
+        <section aria-labelledby="preview-heading" id="preview-section" class="card hidden">
+          <div class="card-header">
+            <h2 id="preview-heading" class="card-title">
+              <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+              Pratinjau Hasil Ekstraksi
+            </h2>
+            <span id="preview-badge" class="badge-info text-xs px-2 py-0.5 rounded-full">Periksa sebelum simpan</span>
+          </div>
+          <div class="card-body">
+            <form id="preview-form" novalidate class="space-y-4">
+
+              <!-- Nomor Surat -->
+              <div class="field-group" data-field="nomor">
+                <label for="f-nomor" class="field-label">Nomor Surat</label>
+                <input id="f-nomor" name="nomor" type="text" class="input-field" placeholder="Belum terdeteksi" />
+                <!-- field-hint: flex row with warning text + OK button.
+                     JS toggles hidden/field-undetected/field-confirmed on the parent .field-group. -->
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Tanggal -->
+              <div class="field-group" data-field="tanggal">
+                <label for="f-tanggal" class="field-label">Tanggal</label>
+                <input id="f-tanggal" name="tanggal" type="date" class="input-field" />
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Pengirim -->
+              <div class="field-group" data-field="pengirim">
+                <label for="f-pengirim" class="field-label">Pengirim / Instansi</label>
+                <input id="f-pengirim" name="pengirim" type="text" class="input-field" placeholder="Belum terdeteksi" />
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Perihal -->
+              <div class="field-group" data-field="perihal">
+                <label for="f-perihal" class="field-label">Perihal</label>
+                <input id="f-perihal" name="perihal" type="text" class="input-field" placeholder="Belum terdeteksi" />
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Jenis Surat -->
+              <div class="field-group" data-field="jenis">
+                <label for="f-jenis" class="field-label">Jenis Surat</label>
+                <select id="f-jenis" name="jenis" class="input-field">
+                  <option value="">— Pilih Jenis —</option>
+                  <option value="Surat Dinas">Surat Dinas</option>
+                  <option value="Surat Keterangan">Surat Keterangan</option>
+                  <option value="Surat Tugas">Surat Tugas</option>
+                  <option value="Surat Edaran">Surat Edaran</option>
+                  <option value="Undangan">Undangan</option>
+                </select>
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Sifat -->
+              <div class="field-group" data-field="sifat">
+                <label for="f-sifat" class="field-label">Sifat</label>
+                <select id="f-sifat" name="sifat" class="input-field">
+                  <option value="">— Pilih Sifat —</option>
+                  <option value="Biasa">Biasa</option>
+                  <option value="Penting">Penting</option>
+                  <option value="Segera">Segera</option>
+                  <option value="Sangat Segera">Sangat Segera</option>
+                  <option value="Rahasia">Rahasia</option>
+                </select>
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <!-- Lampiran -->
+              <div class="field-group" data-field="lampiran">
+                <label for="f-lampiran" class="field-label">Lampiran</label>
+                <input id="f-lampiran" name="lampiran" type="text" class="input-field" placeholder="Belum terdeteksi" />
+                <p class="field-hint hidden">
+                  <span class="hint-text">perlu dicek</span>
+                  <button type="button" class="btn-ok" aria-label="Konfirmasi nilai ini">OK</button>
+                </p>
+              </div>
+
+              <div class="flex gap-3 pt-2">
+                <button id="btn-save" type="submit" class="btn-primary flex-1">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+                  Simpan ke Database
+                </button>
+                <button id="btn-cancel-preview" type="button" class="btn-ghost">Batal</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+      </div><!-- /LEFT COLUMN -->
+
+      <!-- ────────────────────────────────────────
+           RIGHT COLUMN: DATABASE TABLE
+      ──────────────────────────────────────── -->
+      <div class="space-y-5">
+
+        <!-- CARD: DATABASE SURAT -->
+        <section aria-labelledby="db-heading" class="card">
+          <div class="card-header flex-col sm:flex-row gap-3">
+            <h2 id="db-heading" class="card-title">
+              <svg class="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582 4 8 4s8 1.79 8 4"/></svg>
+              Database Surat
+            </h2>
+            <div class="flex gap-2 ml-auto">
+              <button id="btn-export-csv" type="button" class="btn-secondary text-xs px-3 py-1.5">
+                CSV
+              </button>
+              <button id="btn-export-json" type="button" class="btn-secondary text-xs px-3 py-1.5">
+                JSON
+              </button>
+            </div>
+          </div>
+
+          <!-- Search & Filter -->
+          <div class="px-5 pb-4 flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+              <label for="search-input" class="sr-only">Cari surat</label>
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input id="search-input" type="search" placeholder="Cari nomor, pengirim, perihal…"
+                     class="input-field pl-9 text-sm" />
+            </div>
+            <div>
+              <label for="filter-sifat" class="sr-only">Filter sifat</label>
+              <select id="filter-sifat" class="input-field text-sm min-w-[130px]">
+                <option value="">Semua Sifat</option>
+                <option value="Biasa">Biasa</option>
+                <option value="Penting">Penting</option>
+                <option value="Segera">Segera</option>
+                <option value="Sangat Segera">Sangat Segera</option>
+                <option value="Rahasia">Rahasia</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table wrapper -->
+          <div class="overflow-x-auto px-5 pb-5">
+            <table class="w-full text-sm" aria-label="Tabel database surat">
+              <thead>
+                <tr class="border-b border-slate-200 text-left text-slate-500 uppercase text-xs tracking-wider">
+                  <th class="pb-2 pr-3 font-semibold">Nomor</th>
+                  <th class="pb-2 pr-3 font-semibold">Tanggal</th>
+                  <th class="pb-2 pr-3 font-semibold">Pengirim</th>
+                  <th class="pb-2 pr-3 font-semibold">Perihal</th>
+                  <th class="pb-2 pr-3 font-semibold">Jenis</th>
+                  <th class="pb-2 pr-3 font-semibold">Sifat</th>
+                  <th class="pb-2 font-semibold text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <!-- Rows injected by JS -->
+              </tbody>
+            </table>
+            <p id="table-empty" class="text-center text-slate-400 py-10 hidden">
+              Belum ada data surat tersimpan.
+            </p>
+          </div>
+        </section>
+
+      </div><!-- /RIGHT COLUMN -->
+    </div><!-- /MAIN CONTENT -->
+
+  </main>
+
+  <!-- ══════════════════════════════════════════
+       MODAL: EDIT SURAT
+  ══════════════════════════════════════════ -->
+  <div id="edit-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+       class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="modal-title" class="text-base font-bold text-navy">Edit Surat</h3>
+        <button id="modal-close" type="button" aria-label="Tutup modal"
+                class="text-slate-400 hover:text-slate-600 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <form id="edit-form" novalidate class="space-y-4">
+        <input type="hidden" id="edit-id" name="id" />
+        <div>
+          <label for="edit-nomor" class="field-label">Nomor Surat</label>
+          <input id="edit-nomor" name="nomor" type="text" class="input-field" required />
+        </div>
+        <div>
+          <label for="edit-tanggal" class="field-label">Tanggal</label>
+          <input id="edit-tanggal" name="tanggal" type="date" class="input-field" />
+        </div>
+        <div>
+          <label for="edit-pengirim" class="field-label">Pengirim / Instansi</label>
+          <input id="edit-pengirim" name="pengirim" type="text" class="input-field" />
+        </div>
+        <div>
+          <label for="edit-perihal" class="field-label">Perihal</label>
+          <input id="edit-perihal" name="perihal" type="text" class="input-field" />
+        </div>
+        <div>
+          <label for="edit-jenis" class="field-label">Jenis Surat</label>
+          <select id="edit-jenis" name="jenis" class="input-field">
+            <option value="">— Pilih Jenis —</option>
+            <option value="Surat Dinas">Surat Dinas</option>
+            <option value="Surat Keterangan">Surat Keterangan</option>
+            <option value="Surat Tugas">Surat Tugas</option>
+            <option value="Surat Edaran">Surat Edaran</option>
+            <option value="Undangan">Undangan</option>
+          </select>
+        </div>
+        <div>
+          <label for="edit-sifat" class="field-label">Sifat</label>
+          <select id="edit-sifat" name="sifat" class="input-field">
+            <option value="">— Pilih Sifat —</option>
+            <option value="Biasa">Biasa</option>
+            <option value="Penting">Penting</option>
+            <option value="Segera">Segera</option>
+            <option value="Sangat Segera">Sangat Segera</option>
+            <option value="Rahasia">Rahasia</option>
+          </select>
+        </div>
+        <div>
+          <label for="edit-lampiran" class="field-label">Lampiran</label>
+          <input id="edit-lampiran" name="lampiran" type="text" class="input-field" />
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="submit" class="btn-primary flex-1">Simpan Perubahan</button>
+          <button type="button" id="modal-cancel" class="btn-ghost">Batal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       TOAST NOTIFICATION
+  ══════════════════════════════════════════ -->
+  <div id="toast" role="status" aria-live="polite"
+       class="toast hidden"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
